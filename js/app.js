@@ -28,7 +28,6 @@ import { initWishlist, openWishlist } from "./modules/wishlist.js";
 import { renderCheckoutPage } from "./modules/checkout.js";
 import { renderOrderConfirmationPage } from "./modules/order-confirmation.js";
 import { renderFAQPage, renderContactPage, renderPolicyPage } from "./modules/info-pages.js";
-import { initAnnouncementModal } from "./modules/announcement-modal.js";
 import { initTrustStrip } from "./modules/trust-strip.js";
 import { initDecorativeMotion } from "./lib/decorative-motion.js";
 import { showToast } from "./modules/toast.js";
@@ -303,12 +302,5 @@ document.addEventListener("DOMContentLoaded", () => {
   newsletterForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     window.alert("Thank you for subscribing to Petal & Bloom!");
-  });
-
-  // 9. West Africa Expansion & HandyPay Partnership Modal (5.5s delay on first visit)
-  initAnnouncementModal({
-    onExploreShop: () => {
-      navigateToShop();
-    }
   });
 });
