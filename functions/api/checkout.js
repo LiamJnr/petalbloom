@@ -140,6 +140,9 @@ async function createCheckout({ request, env }) {
       description: checkoutDescription(items),
       customer_email: buyer.email,
       pass_fees_to_customer: false,
+      // Our Live account uses HandyPay's eligible platform/destination-payment
+      // scope rather than direct connected-account card charges.
+      charge_scope: 'platform',
       metadata: {
         order_id: orderId,
         buyer_name: buyer.name,
@@ -157,8 +160,10 @@ async function createCheckout({ request, env }) {
   const paymentIntentId = String(intent?.payment_intent_id || '').trim()
   const clientSecret = String(intent?.client_secret || '').trim()
   const publishableKey = String(intent?.publishable_key || '').trim()
+  const chargeScope = String(intent?.charge_scope || '').trim()
   const stripeAccount = String(intent?.stripe_account || '').trim()
-  if (!handypayResponse.ok || !paymentIntentId || !clientSecret || !publishableKey || !stripeAccount) {
+  const needsStripeAccount = chargeScope !== 'platform'
+  if (!handypayResponse.ok || !paymentIntentId || !clientSecret || !publishableKey || (needsStripeAccount && !stripeAccount)) {
     const providerError = handypayData?.error
     const requestId = String(handypayData?.request_id || '').trim()
     const providerCode = String(providerError?.code || '').trim()
@@ -171,6 +176,7 @@ async function createCheckout({ request, env }) {
       responseHasClientSecret: Boolean(clientSecret),
       responseHasPublishableKey: Boolean(publishableKey),
       responseHasStripeAccount: Boolean(stripeAccount),
+      chargeScope: chargeScope || null,
     })
     await env.DB.prepare(
       `UPDATE orders SET status = 'checkout_failed' WHERE id = ? AND status = 'pending'`,
@@ -194,6 +200,7 @@ async function createCheckout({ request, env }) {
     client_secret: clientSecret,
     publishable_key: publishableKey,
     stripe_account: stripeAccount,
+    charge_scope: chargeScope,
     payment_intent_id: paymentIntentId,
     orderId,
     receipt_token: receiptToken,

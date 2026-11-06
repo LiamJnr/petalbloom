@@ -20,8 +20,8 @@ export async function startCheckout({ items, buyer, delivery, card_note, promo_c
   }
 
   const payment = await response.json()
-  const { orderId, receipt_token: receiptToken, client_secret: clientSecret, publishable_key: publishableKey, stripe_account: stripeAccount } = payment
-  if (!orderId || !receiptToken || !clientSecret || !publishableKey || !stripeAccount) {
+  const { orderId, receipt_token: receiptToken, client_secret: clientSecret, publishable_key: publishableKey, stripe_account: stripeAccount, charge_scope: chargeScope } = payment
+  if (!orderId || !receiptToken || !clientSecret || !publishableKey || (chargeScope !== 'platform' && !stripeAccount)) {
     throw new Error('Checkout could not be prepared. Please try again.')
   }
   if (!orderId || !receiptToken) throw new Error('Checkout could not be started.')
@@ -32,10 +32,10 @@ export async function startCheckout({ items, buyer, delivery, card_note, promo_c
     throw new Error('Your browser could not securely save receipt access. Please allow session storage and try again.')
   }
 
-  await mountPaymentSurface({ orderId, clientSecret, publishableKey, stripeAccount, paymentMount })
+  await mountPaymentSurface({ orderId, clientSecret, publishableKey, stripeAccount, chargeScope, paymentMount })
 }
 
-async function mountPaymentSurface({ orderId, clientSecret, publishableKey, stripeAccount, paymentMount }) {
+async function mountPaymentSurface({ orderId, clientSecret, publishableKey, stripeAccount, chargeScope, paymentMount }) {
   if (!(paymentMount instanceof HTMLElement) || !paymentMount.isConnected) {
     throw new Error('The secure payment area is unavailable. Please refresh and try again.')
   }
@@ -49,7 +49,12 @@ async function mountPaymentSurface({ orderId, clientSecret, publishableKey, stri
     paymentMount.replaceChildren()
     throw loadError
   }
-  const stripe = Stripe(publishableKey, { stripeAccount })
+  // Platform/destination charges belong to HandyPay's platform account, not a
+  // connected account. Passing stripeAccount in that case makes Stripe reject
+  // a valid client secret.
+  const stripe = chargeScope === 'platform'
+    ? Stripe(publishableKey)
+    : Stripe(publishableKey, { stripeAccount })
   const elements = stripe.elements({ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#9d007e', colorBackground: '#ffffff', colorText: '#1e1e24', colorDanger: '#b42318', fontFamily: 'Geist, system-ui, sans-serif', borderRadius: '10px', spacingUnit: '4px' } } })
   elements.create('payment', { layout: { type: 'tabs', defaultCollapsed: false } }).mount('#handypay-payment-element')
 
