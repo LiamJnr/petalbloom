@@ -294,10 +294,6 @@ function buildStep3Html({ usdFormatted }) {
 
       <!-- Direct Payment Fields Mount Surface -->
       <div id="handypay-payment-surface" class="handypay-payment-surface-mount" aria-live="polite"></div>
-
-      <div class="co-step-nav co-step-nav-single">
-        <button type="button" class="btn-co-back" id="btn-step3-back">Back</button>
-      </div>
     </div>`;
 }
 
@@ -774,7 +770,6 @@ function bindCheckoutEvents() {
   document.getElementById('btn-step1-next')?.addEventListener('click', () => { if (validateStep1()) goToStep(2); });
   document.getElementById('btn-step2-back')?.addEventListener('click', () => goToStep(1));
   document.getElementById('btn-step2-next')?.addEventListener('click', () => { if (validateStep2()) goToStep(3); });
-  document.getElementById('btn-step3-back')?.addEventListener('click', () => goToStep(2));
 
   // Direct stepper click navigation (to previously completed steps)
   document.getElementById('co-stepper')?.addEventListener('click', (e) => {
