@@ -85,6 +85,8 @@ function loadStripe() {
     const script = document.createElement('script')
     script.src = STRIPE_JS_URL
     script.async = true
+    script.crossOrigin = 'anonymous'
+    script.fetchPriority = 'high'
     script.onload = () => typeof window.Stripe === 'function' ? resolve(window.Stripe) : reject(new Error('Secure payment form could not load.'))
     script.onerror = () => reject(new Error('Secure payment form could not load.'))
     document.head.append(script)
