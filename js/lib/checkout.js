@@ -1,8 +1,8 @@
 const STRIPE_JS_URL = 'https://js.stripe.com/v3/'
 let stripeJsPromise
 
-// Start this as soon as a buyer reaches Review & Pay. The payment fields still
-// wait for a server-created PaymentIntent before they mount.
+// Start this once a buyer enters checkout. The payment fields still wait for a
+// server-created PaymentIntent before they mount.
 export function preloadStripeJs() {
   return loadStripe()
 }

@@ -538,6 +538,9 @@ export function renderCheckoutPage() {
   if (pdpView) pdpView.style.display = "none";
   if (confirmationView) confirmationView.style.display = "none";
   checkoutView.style.display = "block";
+  // Download only for buyers who enter checkout, so it is usually ready before
+  // they reach the explicit payment-confirmation action on step 3.
+  void preloadStripeJs().catch(() => {});
   document.title = "Order Details & Recipient Information — Petal & Bloom";
   scrollToTop();
 
