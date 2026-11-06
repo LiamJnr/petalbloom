@@ -345,7 +345,30 @@ function buildReviewCard() {
   );
 }
 
-// ─── Automatic Step 3 Payment Surface Initializer ────────────────────────────
+// ─── Intentional payment start ───────────────────────────────────────────────
+// A Live PaymentIntent reserves HandyPay processing capacity, so do not create
+// one merely because a buyer is reviewing their delivery details.
+function showPaymentStartPrompt() {
+  const paymentMount = document.getElementById('handypay-payment-surface');
+  if (!paymentMount || paymentMount.querySelector('#handypay-payment-element')) return;
+
+  paymentMount.innerHTML = `
+    <section class="handypay-payment-start" aria-labelledby="handypay-payment-start-title">
+      <div>
+        <p class="handypay-payment-start-kicker">Final step</p>
+        <h3 id="handypay-payment-start-title">Ready to place your order?</h3>
+        <p>Your card details will stay securely with our payment provider.</p>
+      </div>
+      <button type="button" class="handypay-payment-start-button" id="btn-start-handypay-payment">Confirm &amp; Continue to Payment</button>
+    </section>
+  `;
+  document.getElementById('btn-start-handypay-payment')?.addEventListener('click', (event) => {
+    event.currentTarget.disabled = true;
+    initPaymentSurface();
+  });
+}
+
+// ─── Payment surface initializer ─────────────────────────────────────────────
 async function initPaymentSurface() {
   const paymentMount = document.getElementById('handypay-payment-surface');
   if (!paymentMount) return;
@@ -444,7 +467,14 @@ async function initPaymentSurface() {
 
 // ─── Step navigation ──────────────────────────────────────────────────────────
 function goToStep(step) {
+  const previousStep = currentStep;
   currentStep = step;
+  if (previousStep === 3 && step !== 3) {
+    // Returning to edit details invalidates the displayed payment amount and
+    // must never leave stale payment fields visible on a later return.
+    currentCheckoutPayloadKey = null;
+    document.getElementById('handypay-payment-surface')?.replaceChildren();
+  }
   if (step === 3) {
     void preloadStripeJs().catch(() => {});
   }
@@ -469,7 +499,7 @@ function goToStep(step) {
   });
   if (step === 3) {
     buildReviewCard();
-    initPaymentSurface();
+    showPaymentStartPrompt();
   }
   scrollToTop();
 }
