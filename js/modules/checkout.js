@@ -353,12 +353,7 @@ function showPaymentStartPrompt() {
   if (!paymentMount || paymentMount.querySelector('#handypay-payment-element')) return;
 
   paymentMount.innerHTML = `
-    <section class="handypay-payment-start" aria-labelledby="handypay-payment-start-title">
-      <div>
-        <p class="handypay-payment-start-kicker">Final step</p>
-        <h3 id="handypay-payment-start-title">Ready to place your order?</h3>
-        <p>Your card details will stay securely with our payment provider.</p>
-      </div>
+    <section class="handypay-payment-start">
       <button type="button" class="handypay-payment-start-button" id="btn-start-handypay-payment">Confirm &amp; Continue to Payment</button>
     </section>
   `;

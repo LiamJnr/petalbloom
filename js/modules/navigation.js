@@ -123,7 +123,7 @@ export function initNavigation({
   });
 
   // Shop links in header and breadcrumbs
-  document.querySelectorAll("#nav-shop-link, #btn-header-go-shop, .btn-hero-explore-shop, #shop-breadcrumb-home").forEach(link => {
+  document.querySelectorAll("#nav-shop-link, #btn-header-go-shop, .btn-hero-explore-shop, #shop-breadcrumb-home, #announcement-shop-link").forEach(link => {
     link.addEventListener("click", (e) => {
       if (link.id === "shop-breadcrumb-home") {
         e.preventDefault();
@@ -133,7 +133,7 @@ export function initNavigation({
         return;
       }
 
-      if (link.id === "nav-shop-link" || link.classList.contains("btn-explore-full-shop") || link.classList.contains("btn-hero-explore-shop") || link.id === "btn-header-go-shop") {
+      if (link.id === "nav-shop-link" || link.id === "announcement-shop-link" || link.classList.contains("btn-explore-full-shop") || link.classList.contains("btn-hero-explore-shop") || link.id === "btn-header-go-shop") {
         e.preventDefault();
         const category = link.dataset.category || "";
         if (typeof onNavigateShop === "function") {
