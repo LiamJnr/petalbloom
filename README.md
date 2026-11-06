@@ -23,16 +23,16 @@ node "./node_modules/wrangler/bin/wrangler.js" d1 execute petal-bloom-handypay-d
 Set encrypted Pages secrets with Wrangler; do not commit real values:
 
 ```bash
-node "./node_modules/wrangler/bin/wrangler.js" pages secret put HANDYPAY_API_KEY
-node "./node_modules/wrangler/bin/wrangler.js" pages secret put HANDYPAY_WEBHOOK_SECRET
-node "./node_modules/wrangler/bin/wrangler.js" pages secret put RATE_LIMIT_SALT
+node "./node_modules/wrangler/bin/wrangler.js" pages secret put HANDYPAY_API_KEY --project-name petalnbloom
+node "./node_modules/wrangler/bin/wrangler.js" pages secret put HANDYPAY_WEBHOOK_SECRET --project-name petalnbloom
+node "./node_modules/wrangler/bin/wrangler.js" pages secret put RATE_LIMIT_SALT --project-name petalnbloom
 ```
 
-Set `HANDYPAY_CURRENCY=GHS` and `HANDYPAY_EXCHANGE_RATE=11.17` as Pages environment variables, or use values appropriate to the activated HandyPay account.
+The store charges in USD. No currency or exchange-rate environment variable is required: the checkout creates each HandyPay PaymentIntent with `currency: "usd"` and the server-owned USD amount in cents.
 
 ## HandyPay webhook
 
-After deployment, register `https://YOUR_PAGES_DOMAIN/api/webhook` in HandyPay's merchant portal or API using the same test/live mode as the API key. Subscribe to `payment_intent.succeeded` at minimum. Store the one-time signing secret as `HANDYPAY_WEBHOOK_SECRET`.
+After deployment, register `https://petalnbloom.pages.dev/api/webhook` in HandyPay's merchant portal or API using the same test/live mode as the API key. Subscribe to `payment_intent.succeeded` at minimum. Store the one-time signing secret as `HANDYPAY_WEBHOOK_SECRET`.
 
 ## Local testing
 

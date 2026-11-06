@@ -7,7 +7,7 @@ import { getCartItems, getCartSubtotal, getTotalItemCount, openCart } from "./ca
 import { navigateToHome, scrollToTop } from "./router.js";
 import { showToast } from "./toast.js";
 import { getProductBySlug } from "../data/products.js";
-import { startCheckout } from "../lib/checkout.js";
+import { preloadStripeJs, startCheckout } from "../lib/checkout.js";
 import { ICONS } from "../lib/icons.js";
 import { getInternationalEstimates } from "../lib/currency.js";
 import { getDeliveryCountdownState } from "../lib/delivery-timer.js";
@@ -282,7 +282,7 @@ function buildStep2Html(deliveryState) {
 }
 
 // ─── Step 3: Review & Pay ─────────────────────────────────────────────────────
-function buildStep3Html({ ghsFormatted, usdFormatted }) {
+function buildStep3Html({ usdFormatted }) {
   return `
     <div class="co-step-panel" id="co-panel-3">
       <div class="checkout-header-intro">
@@ -321,7 +321,7 @@ function buildStep3Html({ ghsFormatted, usdFormatted }) {
           </div>
 
           <p class="billing-disclaimer-text">
-            As part of our expansion into Ghana (West Africa), <strong>per international store policies prices are shown at checkout in Ghanaian Cedis for convenience  (${ghsFormatted}, CAD, GBP etc.)</strong> Our checkout automatically converts to USD when you enter your card details.
+            <strong>Your card will be charged ${usdFormatted} USD.</strong> Any exchange rate or foreign-transaction fee applied by your bank is determined by your card issuer.
           </p>
 
           <div class="billing-disclaimer-footer">
@@ -340,9 +340,10 @@ function buildStep3Html({ ghsFormatted, usdFormatted }) {
             </button>
           </div>
 
-          <!-- Proceed to Payment Action moved inside card -->
+          <!-- The payment fields mount here after the order is prepared. -->
           <div class="billing-disclaimer-action">
             <button type="submit" class="btn-proceed-payment" id="btn-submit-order-details">Proceed to Payment</button>
+            <div id="handypay-payment-surface" aria-live="polite"></div>
           </div>
         </div>
       </div>
@@ -400,6 +401,11 @@ function buildReviewCard() {
 // ─── Step navigation ──────────────────────────────────────────────────────────
 function goToStep(step) {
   currentStep = step;
+  if (step === 3) {
+    // Warm the provider library while the buyer reviews their order. Any load
+    // error is surfaced only if they choose to proceed to payment.
+    void preloadStripeJs().catch(() => {});
+  }
   const checkSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const activeSvg = '<svg class="co-step-active-svg" xmlns="http://www.w3.org/2000/svg" width="1.15em" height="1.15em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none" /><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path stroke-dasharray="18" d="M12 3c4.97 0 9 4.03 9 9"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s" values="18;0" /><animateTransform attributeName="transform" dur="1.5s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12" /></path><path stroke-dasharray="60" d="M12 3c4.97 0 9 4.03 9 9c0 4.97 -4.03 9 -9 9c-4.97 0 -9 -4.03 -9 -9c0 -4.97 4.03 -9 9 -9Z" opacity=".3"><animate fill="freeze" attributeName="stroke-dashoffset" dur="1.2s" values="60;0" /></path></g></svg>';
 
@@ -551,8 +557,6 @@ export function renderCheckoutPage() {
     : getPromotionPreview(subtotal);
   const discount = promotion.state === "applied" ? promotion.discountUsd : 0;
   const totalDue = subtotal + deliveryFee - discount;
-  const ghsEstimate = getInternationalEstimates(totalDue).find(e => e.code === "GHS");
-  const ghsFormatted = ghsEstimate ? ghsEstimate.formatted : `GH₵ ${(totalDue * 11.17).toFixed(2)}`;
   const usdFormatted = `$${totalDue.toFixed(2)}`;
 
   // Free shipping progress meter calculations
@@ -571,7 +575,7 @@ export function renderCheckoutPage() {
           `<form id="recipient-order-form" novalidate>` +
             buildStep1Html() +
             buildStep2Html(deliveryState) +
-            buildStep3Html({ ghsFormatted, usdFormatted }) +
+            buildStep3Html({ usdFormatted }) +
           `</form>` +
         `</div>` +
         `<aside class="checkout-summary-card" id="checkout-sidebar">` +
@@ -878,20 +882,9 @@ function bindCheckoutEvents() {
         // The endpoint independently rejects a stacked offer. Sending no promo here
         // keeps a saved BLOOM10 code from blocking an eligible Kingsbite checkout.
         promo_code: kingsbiteOffer.isEligible ? "" : getPromotionCode(),
-        onCancel: () => {
-          resetSubmitBtn();
-          showToast({
-            title: "Checkout Closed",
-            message: "Need help completing payment? Check your card readiness.",
-            icon: ICONS.warning,
-            duration: 5000
-          });
-          // Show subtle diagnostic modal after a brief pause so user can resolve bank blocks
-          setTimeout(() => {
-            showPaymentTroubleshootingModal();
-          }, 600);
-        }
+        paymentMount: document.getElementById('handypay-payment-surface')
       });
+      if (submitButton) submitButton.hidden = true;
     } catch (error) {
       resetSubmitBtn();
       showToast({

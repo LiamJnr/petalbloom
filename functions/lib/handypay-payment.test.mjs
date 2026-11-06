@@ -6,14 +6,14 @@ const order = {
   id: 'f0f113d6-7d5b-47a4-9e9b-2b130ffc5ef5',
   payment_intent_id: 'pi_handypay_123',
   total_cents: 125430,
-  payment_currency: 'GHS',
+  payment_currency: 'USD',
 }
 
 const intent = {
   id: order.payment_intent_id,
   status: 'succeeded',
   amount: order.total_cents,
-  currency: 'ghs',
+  currency: 'usd',
   metadata: { order_id: order.id },
 }
 
@@ -21,11 +21,22 @@ test('accepts an exactly matching succeeded HandyPay PaymentIntent', () => {
   assert.equal(paymentIntentMatchesOrder(intent, order), true)
 })
 
+test('accepts HandyPay authenticated status response without metadata', () => {
+  const statusResponse = {
+    payment_intent_id: order.payment_intent_id,
+    status: 'succeeded',
+    amount: order.total_cents,
+    currency: 'usd',
+  }
+  assert.equal(paymentIntentMatchesOrder(statusResponse, order, { requireMetadata: false }), true)
+  assert.equal(paymentIntentMatchesOrder(statusResponse, order), false)
+})
+
 for (const [name, mutation] of [
   ['an unsuccessful intent', { status: 'requires_payment_method' }],
   ['a different intent ID', { id: 'pi_other' }],
   ['a different amount', { amount: 125431 }],
-  ['a different currency', { currency: 'USD' }],
+  ['a different currency', { currency: 'GHS' }],
   ['a different order ID in metadata', { metadata: { order_id: 'different-order' } }],
 ]) {
   test(`rejects ${name}`, () => {

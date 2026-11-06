@@ -54,7 +54,11 @@ export async function onRequestGet({ params, env, request }) {
       })
       if (verifyRes.ok) {
         const verifyData = await verifyRes.json()
-        if (paymentIntentMatchesOrder(verifyData?.data, order)) {
+        // HandyPay's authenticated status endpoint returns payment_intent_id,
+        // amount and currency, but does not include the metadata available in
+        // a webhook. This order already owns the stored intent ID, so those
+        // immutable values are sufficient for this bounded server-side check.
+        if (paymentIntentMatchesOrder(verifyData?.data, order, { requireMetadata: false })) {
           await env.DB.prepare(
             `UPDATE orders
              SET status = 'paid', paid_at = datetime('now')

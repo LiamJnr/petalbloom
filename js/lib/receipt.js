@@ -1,8 +1,7 @@
 /**
  * Receipt Generator — Petal & Bloom
  * Downloads a beautifully branded, print-ready receipt HTML file.
- * All customer-facing prices are in USD. The GHS settlement amount
- * is shown as a small payment reconciliation reference.
+ * All customer-facing prices and payment amounts are in USD.
  */
 
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="100 400 1000 480" width="100%" height="100%">
@@ -126,8 +125,7 @@ export function buildReceiptHtml(order) {
   const discountCents = hasPricingAudit ? Number(order.discount_usd_cents || 0) : 0
   const totalUsdCents = subtotalCents + deliveryFeeCents - discountCents
 
-  // GHS settled amount (DB total_cents is in pesewas)
-  const ghsSettled = ((order.total_cents || 0) / 100).toFixed(2)
+  const paymentSettled = usd(Number(order.total_cents || 0))
 
   // Recipient & delivery details
   const recipientName = delivery.recipient_name || buyer.name || ''
@@ -321,7 +319,7 @@ export function buildReceiptHtml(order) {
           <div class="row"><span>Delivery &amp; Handling</span>${deliveryFeeCents === 0 ? '<span class="free-tag">Free</span>' : `<span>${usd(deliveryFeeCents)}</span>`}</div>
           ${discountCents > 0 ? `<div class="row"><span>Discount${order.promo_code ? ` (${esc(order.promo_code)})` : ''}</span><span>−${usd(discountCents)}</span></div>` : ''}
           <div class="row total"><span>Total Paid</span><span class="amount">${usd(totalUsdCents)}</span></div>
-          <div class="settled">Settled via HandyPay: GHS ${ghsSettled}</div>
+          <div class="settled">Settled via HandyPay: ${paymentSettled} USD</div>
         </div>
       </div>
       ${giftNote ? `

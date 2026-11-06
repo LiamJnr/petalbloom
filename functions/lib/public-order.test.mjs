@@ -9,7 +9,7 @@ test('public order status excludes all customer, delivery, cart, and payment dat
     purchaser_email: 'customer@example.com',
     payment_intent_id: 'pi_handypay_123',
     total_cents: 125430,
-    payment_currency: 'GHS',
+    payment_currency: 'USD',
     cart_json: '[{"name":"Bouquet"}]',
     buyer_json: '{"name":"Customer"}',
     delivery_json: '{"street":"Private address"}',

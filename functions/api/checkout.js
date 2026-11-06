@@ -1,5 +1,4 @@
 import { validateDelivery } from '../lib/delivery.js'
-import { isValidCurrency, normaliseCurrency } from '../lib/handypay-payment.js'
 import { consumeRateLimit } from '../lib/rate-limit.js'
 import { createReceiptToken, hashReceiptToken } from '../lib/receipt-access.js'
 import { calculatePromotion } from '../lib/promotions.js'
@@ -44,15 +43,7 @@ async function createCheckout({ request, env }) {
     })
   }
 
-  const currency = normaliseCurrency(env.HANDYPAY_CURRENCY || 'GHS')
-  if (!isValidCurrency(currency)) {
-    return json({ error: 'Checkout is not configured with a valid payment currency.' }, 500)
-  }
-
-  const exchangeRate = Number(env.HANDYPAY_EXCHANGE_RATE || 11.17)
-  if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
-    return json({ error: 'Checkout is not configured with a valid exchange rate.' }, 500)
-  }
+  const currency = 'USD'
 
   let body
   try {
@@ -102,8 +93,6 @@ async function createCheckout({ request, env }) {
   const deliveryFeeUsd = deliveryFeeUsdCents / 100
   const discountUsd = discountUsdCents / 100
   const totalUsd = totalUsdCents / 100
-  const totalGhs = Number((totalUsd * exchangeRate).toFixed(2))
-  const totalPesewas = Math.round(totalGhs * 100)
   const orderId = crypto.randomUUID()
   const receiptToken = createReceiptToken()
   const receiptAccessHash = await hashReceiptToken(receiptToken)
@@ -129,7 +118,7 @@ async function createCheckout({ request, env }) {
     JSON.stringify(items),
     JSON.stringify(buyer),
     JSON.stringify(deliveryWithFee),
-    totalPesewas,
+    totalUsdCents,
     subtotalUsdCents,
     deliveryFeeUsdCents,
     discountUsdCents,
@@ -146,7 +135,7 @@ async function createCheckout({ request, env }) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      amount: totalPesewas,
+      amount: totalUsdCents,
       currency: currency.toLowerCase(),
       description: checkoutDescription(items),
       customer_email: buyer.email,
@@ -163,7 +152,9 @@ async function createCheckout({ request, env }) {
 
   const handypayData = await handypayResponse.json().catch(() => null)
   const intent = handypayData?.data
-  const paymentIntentId = String(intent?.id || '').trim()
+  // HandyPay returns the Stripe identifier as `payment_intent_id` for its
+  // embedded-payment response, rather than the generic `id` used elsewhere.
+  const paymentIntentId = String(intent?.payment_intent_id || '').trim()
   const clientSecret = String(intent?.client_secret || '').trim()
   const publishableKey = String(intent?.publishable_key || '').trim()
   const stripeAccount = String(intent?.stripe_account || '').trim()
