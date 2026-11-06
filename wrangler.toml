@@ -1,11 +1,10 @@
-name = "petalbloom"
+name = "petalbloom-handypay"
 compatibility_date = "2026-09-06"
 pages_build_output_dir = "."
 
-# The existing Cloudflare Pages project must also bind this database as `DB` in
-# the Cloudflare dashboard.
+# Bind this database as `DB` in the separate HandyPay Cloudflare Pages project.
 [[d1_databases]]
 binding = "DB"
-database_name = "petal-bloom-ps-db"
-database_id = "7c50d9f3-4e62-4831-97a5-5ee46bafbb39"
-preview_database_id = "7c50d9f3-4e62-4831-97a5-5ee46bafbb39"
+database_name = "petal-bloom-handypay-db"
+database_id = "49f92990-7d10-47de-9528-60ef8708c7ea"
+preview_database_id = "49f92990-7d10-47de-9528-60ef8708c7ea"

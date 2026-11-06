@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS orders (
   purchaser_email TEXT NOT NULL,
   cart_json TEXT NOT NULL,
   buyer_json TEXT NOT NULL,
-  -- Retained empty only for compatibility with existing deployments; no data is written here.
   delivery_json TEXT NOT NULL DEFAULT '{}',
   total_cents INTEGER NOT NULL CHECK (total_cents > 0),
   subtotal_usd_cents INTEGER NOT NULL CHECK (subtotal_usd_cents >= 0),
@@ -13,7 +12,8 @@ CREATE TABLE IF NOT EXISTS orders (
   discount_usd_cents INTEGER NOT NULL DEFAULT 0 CHECK (discount_usd_cents >= 0),
   promo_code TEXT,
   payment_currency TEXT NOT NULL CHECK (payment_currency GLOB '[A-Z][A-Z][A-Z]'),
-  ps_reference TEXT,
+  payment_provider TEXT NOT NULL,
+  payment_intent_id TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   paid_at TEXT,
   last_payment_check_at TEXT,
@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
-CREATE INDEX IF NOT EXISTS idx_orders_ps_reference ON orders(ps_reference);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_ps_reference_unique ON orders(ps_reference) WHERE ps_reference IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_payment_intent_id ON orders(payment_intent_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_payment_intent_id_unique ON orders(payment_intent_id) WHERE payment_intent_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_receipt_access_hash_unique ON orders(receipt_access_hash) WHERE receipt_access_hash IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_orders_purchaser_email_status ON orders(purchaser_email, status);
 
@@ -32,4 +32,11 @@ CREATE TABLE IF NOT EXISTS api_rate_limits (
   scope TEXT NOT NULL,
   request_count INTEGER NOT NULL DEFAULT 0 CHECK (request_count >= 0),
   PRIMARY KEY (bucket_start, scope)
+);
+
+CREATE TABLE IF NOT EXISTS payment_webhook_events (
+  id TEXT PRIMARY KEY,
+  provider TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  received_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

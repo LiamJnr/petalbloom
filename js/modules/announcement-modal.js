@@ -1,5 +1,5 @@
 /**
- * West Africa Expansion & Paystack Partnership Announcement Modal Module
+ * West Africa Expansion & HandyPay Partnership Announcement Modal Module
  * Triggers after 5.5 seconds on first session visit with dark overlay.
  */
 

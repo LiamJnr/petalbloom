@@ -1,0 +1,19 @@
+.payment-dialog-open { overflow: hidden; }
+.handypay-payment-backdrop { position: fixed; inset: 0; z-index: 1100; display: grid; place-items: center; padding: 22px; overflow-y: auto; background: rgba(45, 12, 36, .58); backdrop-filter: blur(8px); animation: paymentFade .22s ease-out; }
+.handypay-payment-dialog { position: relative; width: min(100%, 540px); margin: auto; padding: 42px; border: 1px solid rgba(157, 0, 126, .14); border-radius: 24px; background: radial-gradient(circle at 100% 0, #fff2fb 0, transparent 34%), #fff; box-shadow: 0 28px 80px rgba(38, 7, 29, .32); animation: paymentRise .28s ease-out; }
+.handypay-payment-close { position: absolute; top: 16px; right: 16px; width: 34px; height: 34px; border: 1px solid var(--primary-border); border-radius: 50%; background: #fff; color: var(--primary-dark); font: 1.5rem/1 var(--font-body); cursor: pointer; }
+.handypay-payment-kicker { display: flex; align-items: center; gap: 8px; color: var(--primary); font: 700 .71rem/1 var(--font-body); letter-spacing: .13em; text-transform: uppercase; }
+.handypay-payment-kicker span { width: 7px; height: 7px; border-radius: 50%; background: #e8559b; box-shadow: 0 0 0 4px #fcecf9; }
+.handypay-payment-dialog h2 { margin: 16px 0 9px; color: var(--ink); font: 400 clamp(2rem, 6vw, 2.8rem)/.98 var(--font-heading); }
+.handypay-payment-intro { margin: 0 0 28px; color: var(--ink-light); line-height: 1.55; }
+.handypay-payment-form { display: grid; gap: 16px; }
+#handypay-payment-element { min-height: 200px; padding: 4px; }
+.handypay-payment-error { min-height: 1.25em; margin: -5px 0 0; color: #b42318; font-size: .86rem; }
+.handypay-payment-submit { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 16px 18px; border: 0; border-radius: 12px; background: linear-gradient(110deg, var(--primary-dark), var(--primary)); box-shadow: 0 10px 22px rgba(157, 0, 126, .2); color: #fff; font: 700 .98rem var(--font-body); cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; }
+.handypay-payment-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 14px 26px rgba(157, 0, 126, .28); }
+.handypay-payment-submit:disabled { opacity: .65; cursor: wait; }
+.handypay-payment-footnote { margin: 21px 0 0; color: var(--muted); font-size: .75rem; text-align: center; }
+.handypay-payment-footnote span { color: var(--primary); font-size: 1rem; }
+@keyframes paymentFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes paymentRise { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+@media (max-width: 540px) { .handypay-payment-backdrop { padding: 0; align-items: end; } .handypay-payment-dialog { width: 100%; border-radius: 23px 23px 0 0; padding: 34px 22px 28px; } }

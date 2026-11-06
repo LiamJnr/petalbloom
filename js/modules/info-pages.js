@@ -450,7 +450,7 @@ function renderPrivacyContent(container) {
 
         <section class="legal-section">
           <h2>2. Secure Payment Processing</h2>
-          <p>We do not store or process complete payment card details directly on our servers. All financial transactions are securely tokenized and handled through Paystack and authorized merchant payment gateways adhering to PCI-DSS Level 1 compliance.</p>
+          <p>We do not store or process complete payment card details directly on our servers. All financial transactions are securely tokenized through HandyPay and Stripe's payment infrastructure.</p>
         </section>
 
         <section class="legal-section">

@@ -7,7 +7,7 @@ test('public order status excludes all customer, delivery, cart, and payment dat
     id: 'order-id',
     status: 'paid',
     purchaser_email: 'customer@example.com',
-    ps_reference: 'paystack-reference',
+    payment_intent_id: 'pi_handypay_123',
     total_cents: 125430,
     payment_currency: 'GHS',
     cart_json: '[{"name":"Bouquet"}]',

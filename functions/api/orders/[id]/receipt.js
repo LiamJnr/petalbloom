@@ -30,7 +30,7 @@ export async function onRequestPost({ params, env, request }) {
   const order = await env.DB.prepare(
     `SELECT id, status, purchaser_email, cart_json, buyer_json, delivery_json,
             total_cents, subtotal_usd_cents, delivery_fee_usd_cents, discount_usd_cents, promo_code,
-            payment_currency, ps_reference, created_at, paid_at, receipt_access_hash
+            payment_currency, payment_provider, payment_intent_id, created_at, paid_at, receipt_access_hash
      FROM orders WHERE id = ?`,
   ).bind(id).first()
 

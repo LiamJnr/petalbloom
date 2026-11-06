@@ -305,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.alert("Thank you for subscribing to Petal & Bloom!");
   });
 
-  // 9. West Africa Expansion & Paystack Partnership Modal (5.5s delay on first visit)
+  // 9. West Africa Expansion & HandyPay Partnership Modal (5.5s delay on first visit)
   initAnnouncementModal({
     onExploreShop: () => {
       navigateToShop();

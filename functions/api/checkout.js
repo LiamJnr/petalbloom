@@ -1,5 +1,5 @@
 import { validateDelivery } from '../lib/delivery.js'
-import { isValidCurrency, normaliseCurrency } from '../lib/paystack-payment.js'
+import { isValidCurrency, normaliseCurrency } from '../lib/handypay-payment.js'
 import { consumeRateLimit } from '../lib/rate-limit.js'
 import { createReceiptToken, hashReceiptToken } from '../lib/receipt-access.js'
 import { calculatePromotion } from '../lib/promotions.js'
@@ -23,7 +23,7 @@ export async function onRequestPost(context) {
 }
 
 async function createCheckout({ request, env }) {
-  const missing = ['DB', 'PAYSTACK_SECRET_KEY', 'RATE_LIMIT_SALT'].filter((key) => !env[key])
+  const missing = ['DB', 'HANDYPAY_API_KEY', 'RATE_LIMIT_SALT'].filter((key) => !env[key])
   if (missing.length) return json({ error: `Checkout is not configured: ${missing.join(', ')}` }, 500)
 
   const contentLength = Number(request.headers.get('content-length'))
@@ -44,12 +44,12 @@ async function createCheckout({ request, env }) {
     })
   }
 
-  const currency = normaliseCurrency(env.PAYSTACK_CURRENCY || 'GHS')
+  const currency = normaliseCurrency(env.HANDYPAY_CURRENCY || 'GHS')
   if (!isValidCurrency(currency)) {
     return json({ error: 'Checkout is not configured with a valid payment currency.' }, 500)
   }
 
-  const exchangeRate = Number(env.PAYSTACK_EXCHANGE_RATE || 11.17)
+  const exchangeRate = Number(env.HANDYPAY_EXCHANGE_RATE || 11.17)
   if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
     return json({ error: 'Checkout is not configured with a valid exchange rate.' }, 500)
   }
@@ -108,8 +108,6 @@ async function createCheckout({ request, env }) {
   const receiptToken = createReceiptToken()
   const receiptAccessHash = await hashReceiptToken(receiptToken)
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
-  const siteUrl = new URL(request.url).origin
-  const callbackUrl = `${siteUrl}/?view=order-confirmed&order=${encodeURIComponent(orderId)}`
 
   const deliveryWithFee = {
     ...delivery,
@@ -123,8 +121,8 @@ async function createCheckout({ request, env }) {
   await env.DB.prepare(
     `INSERT INTO orders (id, status, purchaser_email, cart_json, buyer_json, delivery_json, total_cents,
                         subtotal_usd_cents, delivery_fee_usd_cents, discount_usd_cents, promo_code,
-                        payment_currency, receipt_access_hash)
-     VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                        payment_currency, payment_provider, receipt_access_hash)
+     VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     orderId,
     buyer.email,
@@ -137,98 +135,56 @@ async function createCheckout({ request, env }) {
     discountUsdCents,
     promotion?.code || null,
     currency,
+    'handypay',
     receiptAccessHash,
   ).run()
 
-  const customFields = [
-    { display_name: 'Order', variable_name: 'order_ref', value: orderId },
-    { display_name: 'Subtotal USD', variable_name: 'subtotal_usd', value: `$${subtotalUsd.toFixed(2)}` },
-    { display_name: 'Delivery Fee', variable_name: 'delivery_fee', value: deliveryFeeUsd === 0 ? (kingsbiteDeliveryOffer.isEligible ? 'FREE (Kingsbite offer)' : 'FREE (Over $100)') : `$${deliveryFeeUsd.toFixed(2)}` },
-    ...(promotion ? [
-      { display_name: 'Promo Code', variable_name: 'promo_code', value: promotion.code },
-      { display_name: 'Discount USD', variable_name: 'discount_usd', value: `-$${discountUsd.toFixed(2)}` },
-    ] : []),
-    { display_name: 'Total USD', variable_name: 'total_usd', value: `$${totalUsd.toFixed(2)}` },
-    { display_name: 'Exchange Rate', variable_name: 'exchange_rate', value: `1 USD = ${exchangeRate} GHS` },
-    { display_name: 'Items', variable_name: 'item_count', value: `${itemCount} item${itemCount === 1 ? '' : 's'}` },
-  ]
-
-  if (delivery.card_note) {
-    customFields.push({
-      display_name: 'Gift Card Note',
-      variable_name: 'card_note',
-      value: delivery.card_note,
-    })
-  }
-
-  if (delivery.delivery_date) {
-    customFields.push({
-      display_name: 'Delivery Schedule',
-      variable_name: 'delivery_schedule',
-      value: `${delivery.delivery_date} (${delivery.time_window || 'Standard'})`,
-    })
-  }
-
-  const payload = {
-    email: buyer.email,
-    amount: totalPesewas,
-    currency,
-    callback_url: callbackUrl,
-    metadata: {
-      order_ref: orderId,
-      buyer_name: buyer.name,
-      amount_usd: `$${totalUsd.toFixed(2)}`,
-      subtotal_usd: `$${subtotalUsd.toFixed(2)}`,
-      delivery_fee_usd: deliveryFeeUsd === 0 ? 'FREE' : `$${deliveryFeeUsd.toFixed(2)}`,
-      promo_code: promotion?.code || '',
-      discount_usd: promotion ? `-$${discountUsd.toFixed(2)}` : '',
-      exchange_rate: exchangeRate,
-      cart_description: checkoutDescription(items),
-      card_note: delivery.card_note || '',
-      delivery_date: delivery.delivery_date || '',
-      time_window: delivery.time_window || '',
-      recipient_name: delivery.recipient_name || buyer.name,
-      custom_fields: customFields,
-    },
-  }
-
-  const paystackResponse = await fetch('https://api.paystack.co/transaction/initialize', {
+  const handypayResponse = await fetch('https://api.handypay.me/api/v1/payment-intents', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}`,
+      Authorization: `Bearer ${env.HANDYPAY_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      amount: totalPesewas,
+      currency: currency.toLowerCase(),
+      description: checkoutDescription(items),
+      customer_email: buyer.email,
+      pass_fees_to_customer: false,
+      metadata: {
+        order_id: orderId,
+        buyer_name: buyer.name,
+        item_count: String(itemCount),
+        total_usd: `$${totalUsd.toFixed(2)}`,
+        delivery_date: delivery.delivery_date || '',
+      },
+    }),
   })
 
-  const paystackData = await paystackResponse.json().catch(() => null)
-  const url = paystackData?.data?.authorization_url
-  if (!paystackResponse.ok || !url) {
+  const handypayData = await handypayResponse.json().catch(() => null)
+  const intent = handypayData?.data
+  const paymentIntentId = String(intent?.id || '').trim()
+  const clientSecret = String(intent?.client_secret || '').trim()
+  const publishableKey = String(intent?.publishable_key || '').trim()
+  const stripeAccount = String(intent?.stripe_account || '').trim()
+  if (!handypayResponse.ok || !paymentIntentId || !clientSecret || !publishableKey || !stripeAccount) {
     await env.DB.prepare(
       `UPDATE orders SET status = 'checkout_failed' WHERE id = ? AND status = 'pending'`,
     ).bind(orderId).run()
     return json({
-      error: paystackData?.message || 'Payment checkout could not be prepared. Please try again.',
+      error: handypayData?.error?.message || 'Payment checkout could not be prepared. Please try again.',
     }, 502)
   }
 
-  const accessCode = paystackData?.data?.access_code
-  const reference = String(paystackData?.data?.reference || '').trim()
-  if (!reference) {
-    await env.DB.prepare(
-      `UPDATE orders SET status = 'checkout_failed' WHERE id = ? AND status = 'pending'`,
-    ).bind(orderId).run()
-    return json({ error: 'Payment checkout could not be prepared. Please try again.' }, 502)
-  }
-
   await env.DB.prepare(
-    `UPDATE orders SET ps_reference = ? WHERE id = ? AND status = 'pending'`
-  ).bind(reference, orderId).run()
+    `UPDATE orders SET payment_intent_id = ? WHERE id = ? AND status = 'pending'`
+  ).bind(paymentIntentId, orderId).run()
 
   return json({
-    url,
-    access_code: accessCode,
-    reference,
+    client_secret: clientSecret,
+    publishable_key: publishableKey,
+    stripe_account: stripeAccount,
+    payment_intent_id: paymentIntentId,
     orderId,
     receipt_token: receiptToken,
   })

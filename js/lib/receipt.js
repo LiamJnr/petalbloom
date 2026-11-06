@@ -2,7 +2,7 @@
  * Receipt Generator — Petal & Bloom
  * Downloads a beautifully branded, print-ready receipt HTML file.
  * All customer-facing prices are in USD. The GHS settlement amount
- * is shown as a small footnote for Paystack compliance reference.
+ * is shown as a small payment reconciliation reference.
  */
 
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="100 400 1000 480" width="100%" height="100%">
@@ -297,8 +297,8 @@ export function buildReceiptHtml(order) {
       <div class="section">
         <div class="section-label">Order Details</div>
         <p><strong>Order Reference:</strong> ${esc(order.id || '')}</p>
-        <p><strong>Payment Method:</strong> Paystack Secure Checkout</p>
-        ${order.ps_reference ? `<p><strong>Paystack Reference:</strong> ${esc(order.ps_reference)}</p>` : ''}
+        <p><strong>Payment Method:</strong> HandyPay Secure Checkout</p>
+        ${order.payment_intent_id ? `<p><strong>Payment Reference:</strong> ${esc(order.payment_intent_id)}</p>` : ''}
       </div>
       <div class="section">
         <div class="section-label">Items Ordered</div>
@@ -321,7 +321,7 @@ export function buildReceiptHtml(order) {
           <div class="row"><span>Delivery &amp; Handling</span>${deliveryFeeCents === 0 ? '<span class="free-tag">Free</span>' : `<span>${usd(deliveryFeeCents)}</span>`}</div>
           ${discountCents > 0 ? `<div class="row"><span>Discount${order.promo_code ? ` (${esc(order.promo_code)})` : ''}</span><span>−${usd(discountCents)}</span></div>` : ''}
           <div class="row total"><span>Total Paid</span><span class="amount">${usd(totalUsdCents)}</span></div>
-          <div class="settled">Settled via Paystack: GHS ${ghsSettled}</div>
+          <div class="settled">Settled via HandyPay: GHS ${ghsSettled}</div>
         </div>
       </div>
       ${giftNote ? `

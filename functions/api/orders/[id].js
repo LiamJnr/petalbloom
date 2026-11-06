@@ -1,9 +1,9 @@
-import { paymentMatchesOrder } from '../../lib/paystack-payment.js'
+import { paymentIntentMatchesOrder } from '../../lib/handypay-payment.js'
 import { toPublicOrderStatus } from '../../lib/public-order.js'
 import { consumeRateLimit } from '../../lib/rate-limit.js'
 
 const ORDER_STATUS_RATE_LIMIT = 30
-const PAYSTACK_VERIFY_COOLDOWN_SECONDS = 60
+const PAYMENT_VERIFY_COOLDOWN_SECONDS = 60
 
 export async function onRequestGet({ params, env, request }) {
   const id = String(params.id || '')
@@ -31,40 +31,40 @@ export async function onRequestGet({ params, env, request }) {
   }
 
   let order = await env.DB.prepare(
-    'SELECT id, status, ps_reference, total_cents, payment_currency FROM orders WHERE id = ?',
+    'SELECT id, status, payment_intent_id, total_cents, payment_currency FROM orders WHERE id = ?',
   ).bind(id).first()
 
   if (!order) return json({ error: 'Order not found.' }, 404)
 
-  // If order is pending, actively verify with Paystack in case webhook is delayed or dropped
-  if (order.status === 'pending' && env.PAYSTACK_SECRET_KEY && order.ps_reference) {
+  // Webhooks are authoritative; this is a bounded fallback when one is delayed.
+  if (order.status === 'pending' && env.HANDYPAY_API_KEY && order.payment_intent_id) {
     const claim = await env.DB.prepare(
       `UPDATE orders SET last_payment_check_at = datetime('now')
        WHERE id = ? AND status = 'pending'
          AND (last_payment_check_at IS NULL OR last_payment_check_at <= datetime('now', ?))`,
-    ).bind(order.id, `-${PAYSTACK_VERIFY_COOLDOWN_SECONDS} seconds`).run()
+    ).bind(order.id, `-${PAYMENT_VERIFY_COOLDOWN_SECONDS} seconds`).run()
     if (claim.meta.changes !== 1) return json({ order: toPublicOrderStatus(order) })
 
     try {
-      const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(order.ps_reference)}`, {
+      const verifyRes = await fetch(`https://api.handypay.me/api/v1/payment-intents/${encodeURIComponent(order.payment_intent_id)}`, {
         headers: {
-          Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer ${env.HANDYPAY_API_KEY}`,
           'Content-Type': 'application/json',
         },
       })
       if (verifyRes.ok) {
         const verifyData = await verifyRes.json()
-        if (paymentMatchesOrder(verifyData?.data, order)) {
+        if (paymentIntentMatchesOrder(verifyData?.data, order)) {
           await env.DB.prepare(
             `UPDATE orders
              SET status = 'paid', paid_at = datetime('now')
-             WHERE id = ? AND ps_reference = ? AND total_cents = ? AND payment_currency = ? AND status = 'pending'`,
-          ).bind(order.id, order.ps_reference, order.total_cents, order.payment_currency).run()
+             WHERE id = ? AND payment_intent_id = ? AND total_cents = ? AND payment_currency = ? AND status = 'pending'`,
+          ).bind(order.id, order.payment_intent_id, order.total_cents, order.payment_currency).run()
           order.status = 'paid'
         }
       }
     } catch (err) {
-      console.warn('Paystack active verification check error:', err)
+      console.warn('HandyPay active verification check error:', err)
     }
   }
 

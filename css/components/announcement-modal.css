@@ -1,5 +1,5 @@
 /* ==========================================================================
-   WEST AFRICA EXPANSION & PAYSTACK PARTNERSHIP ANNOUNCEMENT MODAL
+   WEST AFRICA EXPANSION & HANDYPAY PARTNERSHIP ANNOUNCEMENT MODAL
    ========================================================================== */
 
 .announcement-modal-backdrop {
@@ -144,8 +144,8 @@
   margin-bottom: 20px;
 }
 
-/* Paystack Partnership Callout Card */
-.announcement-paystack-card {
+/* HandyPay Partnership Callout Card */
+.announcement-handypay-card {
   background-color: var(--bg-subtle, #f9f8fa);
   border: 1px solid var(--border, #e5e7eb);
   border-radius: var(--radius-md, 12px);
@@ -156,7 +156,7 @@
   gap: 14px;
 }
 
-.announcement-paystack-icon {
+.announcement-handypay-icon {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full, 9999px);
@@ -169,14 +169,14 @@
   flex-shrink: 0;
 }
 
-.announcement-paystack-text h5 {
+.announcement-handypay-text h5 {
   font-size: 0.86rem;
   font-weight: 700;
   color: var(--ink, #1e1e24);
   margin-bottom: 2px;
 }
 
-.announcement-paystack-text p {
+.announcement-handypay-text p {
   font-size: 0.78rem;
   color: var(--muted, #6b7280);
   line-height: 1.4;
@@ -241,8 +241,8 @@
     min-height: auto;
   }
 
-  /* Hide the Paystack callout card on mobile so everything fits in one glance */
-  .announcement-paystack-card {
+  /* Hide the payment callout card on mobile so everything fits in one glance */
+  .announcement-handypay-card {
     display: none;
   }
 
