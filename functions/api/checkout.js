@@ -159,11 +159,30 @@ async function createCheckout({ request, env }) {
   const publishableKey = String(intent?.publishable_key || '').trim()
   const stripeAccount = String(intent?.stripe_account || '').trim()
   if (!handypayResponse.ok || !paymentIntentId || !clientSecret || !publishableKey || !stripeAccount) {
+    const providerError = handypayData?.error
+    const requestId = String(handypayData?.request_id || '').trim()
+    const providerCode = String(providerError?.code || '').trim()
+    const providerMessage = String(providerError?.message || '').trim()
+    console.error('HandyPay PaymentIntent creation was rejected or incomplete.', {
+      status: handypayResponse.status,
+      providerCode: providerCode || null,
+      requestId: requestId || null,
+      responseHasIntent: Boolean(paymentIntentId),
+      responseHasClientSecret: Boolean(clientSecret),
+      responseHasPublishableKey: Boolean(publishableKey),
+      responseHasStripeAccount: Boolean(stripeAccount),
+    })
     await env.DB.prepare(
       `UPDATE orders SET status = 'checkout_failed' WHERE id = ? AND status = 'pending'`,
     ).bind(orderId).run()
+    const detail = providerMessage
+      || (handypayResponse.ok
+        ? 'HandyPay returned an incomplete payment configuration.'
+        : `HandyPay rejected the payment setup (HTTP ${handypayResponse.status}).`)
     return json({
-      error: handypayData?.error?.message || 'Payment checkout could not be prepared. Please try again.',
+      error: detail,
+      provider_error_code: providerCode || undefined,
+      provider_request_id: requestId || undefined,
     }, 502)
   }
 
