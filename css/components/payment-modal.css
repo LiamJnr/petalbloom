@@ -1,16 +1,47 @@
 .handypay-payment-surface { margin-top: 18px; animation: paymentRise .28s ease-out; }
-.handypay-payment-surface { padding: clamp(20px, 4vw, 30px); border: 1px solid rgba(157, 0, 126, .17); border-top: 4px solid var(--primary); border-radius: 16px; background: radial-gradient(circle at 100% 0, #fff2fb 0, transparent 36%), #fff; box-shadow: 0 10px 28px rgba(38, 7, 29, .09); }
-.handypay-payment-kicker { display: flex; align-items: center; gap: 8px; color: var(--primary); font: 700 .71rem/1 var(--font-body); letter-spacing: .13em; text-transform: uppercase; }
-.handypay-payment-kicker span { width: 7px; height: 7px; border-radius: 50%; background: #e8559b; box-shadow: 0 0 0 4px #fcecf9; }
-.handypay-payment-surface h3 { margin: 14px 0 8px; color: var(--ink); font: 400 clamp(1.6rem, 4vw, 2.05rem)/1 var(--font-heading); }
-.handypay-payment-intro { margin: 0 0 28px; color: var(--ink-light); line-height: 1.55; }
+.handypay-payment-surface { padding: clamp(20px, 4vw, 30px); border: 1px solid var(--border, #e5e7eb); border-radius: 16px; background: #ffffff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05); }
+.handypay-payment-surface h3 { margin: 0 0 8px; color: var(--ink); font: 400 clamp(1.6rem, 4vw, 2.05rem)/1 var(--font-heading); }
+.handypay-payment-intro { margin: 0 0 24px; color: var(--ink-light); line-height: 1.55; }
 .handypay-payment-form { display: grid; gap: 16px; }
 #handypay-payment-element { min-height: 200px; padding: 4px; }
 .handypay-payment-error { min-height: 1.25em; margin: -5px 0 0; color: #b42318; font-size: .86rem; }
-.handypay-payment-submit { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 16px 18px; border: 0; border-radius: 12px; background: linear-gradient(110deg, var(--primary-dark), var(--primary)); box-shadow: 0 10px 22px rgba(157, 0, 126, .2); color: #fff; font: 700 .98rem var(--font-body); cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; }
-.handypay-payment-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 14px 26px rgba(157, 0, 126, .28); }
+.handypay-payment-submit { display: flex; justify-content: center; align-items: center; text-align: center; width: 100%; padding: 16px 18px; border: 0; border-radius: 12px; background: linear-gradient(110deg, var(--primary-dark), var(--primary)); box-shadow: 0 4px 12px rgba(157, 0, 126, .18); color: #fff; font: 700 .98rem var(--font-body); cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; }
+.handypay-payment-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(157, 0, 126, .24); }
 .handypay-payment-submit:disabled { opacity: .65; cursor: wait; }
 .handypay-payment-footnote { margin: 21px 0 0; color: var(--muted); font-size: .75rem; text-align: center; }
 .handypay-payment-footnote span { color: var(--primary); font-size: 1rem; }
 @keyframes paymentRise { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
 @media (max-width: 540px) { .handypay-payment-surface { padding: 22px 18px; border-radius: 14px; } }
+
+/* Skeleton Loader for Instant Payment Mount */
+.handypay-skeleton-card {
+  margin-top: 18px;
+  padding: clamp(20px, 4vw, 30px);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: paymentRise .28s ease-out;
+}
+
+.handypay-skeleton-line {
+  background: linear-gradient(90deg, #f2eff4 0%, #faf8fb 50%, #f2eff4 100%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+.handypay-skeleton-title { width: 45%; height: 26px; border-radius: 8px; margin: 0 0 2px; }
+.handypay-skeleton-intro { width: 75%; height: 14px; margin-bottom: 6px; }
+.handypay-skeleton-tabs { width: 100%; height: 44px; border-radius: 10px; }
+.handypay-skeleton-input { width: 100%; height: 46px; border-radius: 10px; }
+.handypay-skeleton-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.handypay-skeleton-btn { width: 100%; height: 52px; border-radius: 12px; margin-top: 6px; }
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

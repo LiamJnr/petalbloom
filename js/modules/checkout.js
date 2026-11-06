@@ -18,7 +18,7 @@ import { escapeHtml } from "../lib/html-escape.js";
 let selectedTimeWindow = "morning";
 let selectedLocationType = "residential";
 let currentStep = 1;
-let disclaimerObserver = null;
+let currentCheckoutPayloadKey = null;
 
 // SVG Assets for Location Types
 const homeSvg = `
@@ -287,66 +287,13 @@ function buildStep3Html({ usdFormatted }) {
     <div class="co-step-panel" id="co-panel-3">
       <div class="checkout-header-intro">
         <h2>Review &amp; Pay</h2>
-        <p class="checkout-subtitle">Almost there &mdash; review your info and read the billing notes before paying.</p>
+        <p class="checkout-subtitle">Almost there &mdash; review your order details and enter your payment information below.</p>
       </div>
 
       <div class="co-review-card" id="co-review-card"></div>
 
-      <!-- Accepted Payment Methods Logos -->
-      <div class="checkout-accepted-methods-bar">
-        <div class="payment-methods-badges">
-          <span class="payment-method-logo logo-apple-pay" title="Apple Pay" aria-label="Apple Pay">
-            <svg viewBox="2.8 7.5 18.5 9" fill="#000000" role="img" xmlns="http://www.w3.org/2000/svg"><title>Apple Pay</title><path d="M6.86 8.018c-.3.016-.668.199-.88.456-.191.22-.36.58-.316.918.338.03.675-.169.888-.418.205-.258.345-.603.308-.955zm2.207.42v5.493h.852v-1.877h1.18c1.078 0 1.835-.739 1.835-1.812 0-1.07-.742-1.805-1.808-1.805zm.852.719h.982c.739 0 1.161.396 1.161 1.089 0 .692-.422 1.092-1.164 1.092h-.979zm-3.154.3c-.45.01-.83.28-1.05.28-.235 0-.593-.264-.981-.257a1.446 1.446 0 0 0-1.23.747c-.527.908-.139 2.255.374 2.995.249.366.549.769.944.754.373-.014.52-.242.973-.242.454 0 .586.242.98.235.41-.007.667-.366.915-.733.286-.417.403-.82.41-.841-.007-.008-.79-.308-.797-1.209-.008-.754.615-1.113.644-1.135-.352-.52-.9-.578-1.09-.593a1.123 1.123 0 0 0-.092-.002zm8.204.397c-.99 0-1.606.533-1.652 1.256h.777c.072-.358.369-.586.845-.586.502 0 .803.266.803.711v.309l-1.097.064c-.951.054-1.488.484-1.488 1.184 0 .72.548 1.207 1.332 1.207.526 0 1.032-.281 1.264-.727h.019v.659h.788v-2.76c0-.803-.62-1.317-1.591-1.317zm1.94.072l1.446 4.009c0 .003-.073.24-.073.247-.125.41-.33.571-.711.571-.069 0-.206 0-.267-.015v.666c.06.011.267.019.335.019.83 0 1.226-.312 1.568-1.283l1.5-4.214h-.868l-1.012 3.259h-.015l-1.013-3.26zm-1.167 2.189v.316c0 .521-.45.917-1.024.917-.442 0-.731-.228-.731-.579 0-.342.278-.56.769-.593z"/></svg>
-          </span>
-          <span class="payment-method-logo logo-visa" title="Visa" aria-label="Visa">
-            <svg viewBox="0 8 24 8" fill="#1A1F71" role="img" xmlns="http://www.w3.org/2000/svg"><title>Visa</title><path d="M9.112 8.262L5.97 15.758H3.92L2.374 9.775c-.094-.368-.175-.503-.461-.658C1.447 8.864.677 8.627 0 8.479l.046-.217h3.3a.904.904 0 01.894.764l.817 4.338 2.018-5.102zm8.033 5.049c.008-1.979-2.736-2.088-2.717-2.972.006-.269.262-.555.822-.628a3.66 3.66 0 011.913.336l.34-1.59a5.207 5.207 0 00-1.814-.333c-1.917 0-3.266 1.02-3.278 2.479-.012 1.079.963 1.68 1.698 2.04.756.367 1.01.603 1.006.931-.005.504-.602.725-1.16.734-.975.015-1.54-.263-1.992-.473l-.351 1.642c.453.208 1.289.39 2.156.398 2.037 0 3.37-1.006 3.377-2.564m5.061 2.447H24l-1.565-7.496h-1.656a.883.883 0 00-.826.55l-2.909 6.946h2.036l.405-1.12h2.488zm-2.163-2.656l1.02-2.815.588 2.815zm-8.16-4.84l-1.603 7.496H8.34l1.605-7.496z"/></svg>
-          </span>
-          <span class="payment-method-logo logo-mastercard" title="Mastercard" aria-label="Mastercard">
-            <svg viewBox="1 2.5 22 13" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" role="img"><title>Mastercard</title><circle cx="7.5" cy="9" r="6.5" fill="#EB001B" /><circle cx="16.5" cy="9" r="6.5" fill="#F79E1B" /><path d="M 12 3.895 A 6.5 6.5 0 0 0 10 9 A 6.5 6.5 0 0 0 12 14.105 A 6.5 6.5 0 0 0 14 9 A 6.5 6.5 0 0 0 12 3.895 Z" fill="#FF5F00" /></svg>
-          </span>
-        </div>
-      </div>
-
-      <!-- International Billing Disclaimer & Payment Readiness -->
-      <div class="checkout-billing-disclaimer" id="checkout-billing-disclaimer">
-        <div class="billing-disclaimer-inner">
-          <div class="billing-disclaimer-header">
-            <div class="billing-disclaimer-title">
-              <svg class="billing-disclaimer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect width="20" height="14" x="2" y="5" rx="2"/>
-                <line x1="2" y1="10" x2="22" y2="10"/>
-              </svg>
-              <span>Billing &amp; Payment Security</span>
-            </div>
-          </div>
-
-          <p class="billing-disclaimer-text">
-            <strong>Your card will be charged ${usdFormatted} USD.</strong> Any exchange rate or foreign-transaction fee applied by your bank is determined by your card issuer.
-          </p>
-
-          <div class="billing-disclaimer-footer">
-            <button type="button" class="btn-card-help-link" id="btn-trigger-payment-help">
-              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
-                <path d="M0 0h24v24H0z" fill="none" />
-                <g fill="none">
-                  <circle cx="12" cy="12" r="10.25" fill="currentColor" opacity=".2" transform="rotate(90 12 12)" />
-                  <circle cx="12" cy="12" r="10.25" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" transform="rotate(90 12 12)" />
-                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 13.98c0-2.23 2.9-2.4 2.9-4.77c0-1.5-1.3-2.71-2.9-2.71S9.1 7.7 9.1 9.2" />
-                  <path fill="currentColor" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12.42 17.37a.42.42 0 1 1-.84 0a.42.42 0 0 1 .84 0" />
-                </g>
-              </svg>
-
-              <span>Need help with payment?</span>
-            </button>
-          </div>
-
-          <!-- The payment fields mount here after the order is prepared. -->
-          <div class="billing-disclaimer-action">
-            <button type="submit" class="btn-proceed-payment" id="btn-submit-order-details">Proceed to Payment</button>
-            <div id="handypay-payment-surface" aria-live="polite"></div>
-          </div>
-        </div>
-      </div>
+      <!-- Direct Payment Fields Mount Surface -->
+      <div id="handypay-payment-surface" class="handypay-payment-surface-mount" aria-live="polite"></div>
 
       <div class="co-step-nav co-step-nav-single">
         <button type="button" class="btn-co-back" id="btn-step3-back">Back</button>
@@ -398,12 +345,107 @@ function buildReviewCard() {
   );
 }
 
+// ─── Automatic Step 3 Payment Surface Initializer ────────────────────────────
+async function initPaymentSurface() {
+  const paymentMount = document.getElementById('handypay-payment-surface');
+  if (!paymentMount) return;
+
+  const custName = document.getElementById("cust-name")?.value.trim() || "";
+  const custEmail = document.getElementById("cust-email")?.value.trim() || "";
+  const custPhone = document.getElementById("cust-phone")?.value.trim() || "";
+
+  const recName = document.getElementById("rec-name")?.value.trim() || "";
+  const address = document.getElementById("rec-address")?.value.trim() || "";
+  const suite = document.getElementById("rec-suite")?.value.trim() || "";
+  const city = document.getElementById("rec-city")?.value.trim() || "";
+  const state = document.getElementById("rec-state")?.value.trim() || "";
+  const zip = document.getElementById("rec-zip")?.value.trim() || "";
+  const courierNotes = document.getElementById("rec-notes")?.value.trim() || "";
+  const deliveryDate = document.getElementById("rec-delivery-date")?.value.trim() || "";
+  const cardNote = document.getElementById("rec-card-msg")?.value.trim() || "";
+
+  const buyer = { name: custName, email: custEmail, phone: custPhone };
+  const delivery = {
+    recipient_name: recName,
+    street: suite ? `${address}, ${suite}` : address,
+    city,
+    state,
+    zip,
+    location_type: selectedLocationType,
+    delivery_date: deliveryDate,
+    time_window: selectedTimeWindow,
+    courier_notes: courierNotes
+  };
+
+  const checkoutItems = getCartItems();
+  const kingsbiteOffer = getKingsbiteFreeDeliveryOffer(checkoutItems, getCartSubtotal());
+  const promoCode = kingsbiteOffer.isEligible ? "" : getPromotionCode();
+
+  const payloadKey = JSON.stringify({
+    buyer,
+    delivery,
+    cardNote,
+    promoCode,
+    items: checkoutItems.map(i => [i.slug, i.quantity, i.size.id, i.vase.id])
+  });
+
+  // If already mounted with the exact same payload, preserve current fields
+  if (currentCheckoutPayloadKey === payloadKey && paymentMount.querySelector('#handypay-payment-element')) {
+    return;
+  }
+
+  currentCheckoutPayloadKey = payloadKey;
+
+  // Render skeleton loader immediately in place of payment fields
+  paymentMount.innerHTML = `
+    <div class="handypay-skeleton-card" aria-busy="true" aria-label="Loading secure payment fields">
+
+      <div class="handypay-skeleton-line handypay-skeleton-title"></div>
+      <div class="handypay-skeleton-line handypay-skeleton-intro"></div>
+      <div class="handypay-skeleton-line handypay-skeleton-tabs"></div>
+      <div class="handypay-skeleton-line handypay-skeleton-input"></div>
+      <div class="handypay-skeleton-row">
+        <div class="handypay-skeleton-line handypay-skeleton-input"></div>
+        <div class="handypay-skeleton-line handypay-skeleton-input"></div>
+      </div>
+      <div class="handypay-skeleton-line handypay-skeleton-btn"></div>
+    </div>
+  `;
+
+  try {
+    await startCheckout({
+      items: checkoutItems.map(item => ({
+        slug: item.slug,
+        size_id: item.size.id,
+        vase_id: item.vase.id,
+        quantity: item.quantity,
+        giftMessage: item.giftMessage || ""
+      })),
+      buyer,
+      delivery,
+      card_note: cardNote,
+      promo_code: promoCode,
+      paymentMount
+    });
+  } catch (error) {
+    currentCheckoutPayloadKey = null;
+    paymentMount.innerHTML = `
+      <div class="handypay-payment-error-box" style="margin-top: 18px; padding: 24px; text-align: center; background: #fff5f5; border: 1px solid #fecaca; border-radius: 16px;">
+        <p style="font-weight: 600; color: #b42318; font-size: 0.95rem;">Unable to load payment fields</p>
+        <p style="margin-top: 6px; font-size: 0.85rem; color: #7f1d1d;">${escapeHtml(error.message || "Please check your connection and try again.")}</p>
+        <button type="button" class="btn-retry-payment button button-dark" style="margin-top: 16px; padding: 10px 20px; font-size: 0.88rem;" id="btn-retry-handypay-payment">Retry Loading Payment</button>
+      </div>
+    `;
+    document.getElementById('btn-retry-handypay-payment')?.addEventListener('click', () => {
+      initPaymentSurface();
+    });
+  }
+}
+
 // ─── Step navigation ──────────────────────────────────────────────────────────
 function goToStep(step) {
   currentStep = step;
   if (step === 3) {
-    // Warm the provider library while the buyer reviews their order. Any load
-    // error is surfaced only if they choose to proceed to payment.
     void preloadStripeJs().catch(() => {});
   }
   const checkSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -427,9 +469,7 @@ function goToStep(step) {
   });
   if (step === 3) {
     buildReviewCard();
-    bindDisclaimerObserver();
-  } else {
-    disconnectDisclaimerObserver();
+    initPaymentSurface();
   }
   scrollToTop();
 }
@@ -461,26 +501,6 @@ function validateStep2() {
   return true;
 }
 
-// ─── Disclaimer in-view observer ──────────────────────────────────────────────
-function bindDisclaimerObserver() {
-  const el = document.getElementById('checkout-billing-disclaimer');
-  if (!el) return;
-  disconnectDisclaimerObserver();
-  if ('IntersectionObserver' in window) {
-    disclaimerObserver = new IntersectionObserver(
-      (entries) => entries.forEach((entry) => el.classList.toggle('is-in-view', entry.isIntersecting)),
-      { threshold: 0.2 },
-    );
-    disclaimerObserver.observe(el);
-  } else { el.classList.add('is-in-view'); }
-}
-
-function disconnectDisclaimerObserver() {
-  disclaimerObserver?.disconnect();
-  disclaimerObserver = null;
-  document.getElementById('checkout-billing-disclaimer')?.classList.remove('is-in-view');
-}
-
 /**
  * Render the multi-step Order Details & Recipient Information Page
  */
@@ -491,7 +511,6 @@ export function renderCheckoutPage() {
   const confirmationView = document.getElementById("order-confirmation-view");
 
   if (!checkoutView) return;
-  disconnectDisclaimerObserver();
 
   // View visibility
   if (homeView) homeView.style.display = "none";
@@ -505,6 +524,7 @@ export function renderCheckoutPage() {
   currentStep = 1;
   selectedTimeWindow = 'morning';
   selectedLocationType = 'residential';
+  currentCheckoutPayloadKey = null;
 
   // Load items from local storage
   let cart = [];
@@ -690,6 +710,12 @@ function updateCheckoutPromotionSummary() {
       </div>
     `;
   }
+
+  // If currently on step 3, re-sync payment intent to reflect the discount
+  if (currentStep === 3) {
+    currentCheckoutPayloadKey = null;
+    initPaymentSurface();
+  }
 }
 
 /**
@@ -809,93 +835,6 @@ function bindCheckoutEvents() {
       console.warn("Could not sync gift note to storage:", err);
     }
   });
-
-  // Form submit handler — only executes when on step 3
-  const form = document.getElementById("recipient-order-form");
-  form?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (currentStep !== 3) return;
-
-    // Customer (Purchaser / Billing) details
-    const custName = document.getElementById("cust-name")?.value.trim() || "";
-    const custEmail = document.getElementById("cust-email")?.value.trim() || "";
-    const custPhone = document.getElementById("cust-phone")?.value.trim() || "";
-
-    // Flower Recipient & Delivery Destination details
-    const recName = document.getElementById("rec-name")?.value.trim() || "";
-    const address = document.getElementById("rec-address")?.value.trim() || "";
-    const suite = document.getElementById("rec-suite")?.value.trim() || "";
-    const city = document.getElementById("rec-city")?.value.trim() || "";
-    const state = document.getElementById("rec-state")?.value.trim() || "";
-    const zip = document.getElementById("rec-zip")?.value.trim() || "";
-    const courierNotes = document.getElementById("rec-notes")?.value.trim() || "";
-    const deliveryDate = document.getElementById("rec-delivery-date")?.value.trim() || "";
-    const cardNote = document.getElementById("rec-card-msg")?.value.trim() || "";
-
-    const buyer = {
-      name: custName,
-      email: custEmail,
-      phone: custPhone
-    };
-
-    const delivery = {
-      recipient_name: recName,
-      street: suite ? `${address}, ${suite}` : address,
-      city,
-      state,
-      zip,
-      location_type: selectedLocationType,
-      delivery_date: deliveryDate,
-      time_window: selectedTimeWindow,
-      courier_notes: courierNotes
-    };
-
-    const submitButton = document.getElementById("btn-submit-order-details");
-    const originalLabel = submitButton?.innerHTML || "Proceed to Checkout &rarr;";
-
-    const resetSubmitBtn = () => {
-      if (submitButton) {
-        submitButton.disabled = false;
-        submitButton.innerHTML = originalLabel;
-      }
-    };
-
-    if (submitButton) {
-      submitButton.disabled = true;
-      submitButton.textContent = "Preparing secure checkout…";
-    }
-
-    try {
-      const checkoutItems = getCartItems();
-      const kingsbiteOffer = getKingsbiteFreeDeliveryOffer(checkoutItems, getCartSubtotal());
-      await startCheckout({
-        items: checkoutItems.map(item => ({
-          slug: item.slug,
-          size_id: item.size.id,
-          vase_id: item.vase.id,
-          quantity: item.quantity,
-          giftMessage: item.giftMessage || ""
-        })),
-        buyer,
-        delivery,
-        card_note: cardNote,
-        // The endpoint independently rejects a stacked offer. Sending no promo here
-        // keeps a saved BLOOM10 code from blocking an eligible Kingsbite checkout.
-        promo_code: kingsbiteOffer.isEligible ? "" : getPromotionCode(),
-        paymentMount: document.getElementById('handypay-payment-surface')
-      });
-      if (submitButton) submitButton.hidden = true;
-    } catch (error) {
-      resetSubmitBtn();
-      showToast({
-        title: "Unable to start checkout",
-        message: error.message || "Please try again in a moment.",
-        icon: ICONS.warning,
-        duration: 6000
-      });
-    }
-  });
-
 }
 
 /**
@@ -972,7 +911,7 @@ export function showPaymentTroubleshootingModal() {
     });
     modal.querySelector("#btn-troubleshoot-retry")?.addEventListener("click", () => {
       modal.classList.remove("active");
-      const submitBtn = document.getElementById("btn-submit-order-details");
+      const submitBtn = document.querySelector(".handypay-payment-submit");
       if (submitBtn) {
         submitBtn.scrollIntoView({ behavior: "smooth", block: "center" });
         submitBtn.focus();
