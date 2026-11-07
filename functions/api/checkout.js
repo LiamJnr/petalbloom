@@ -152,6 +152,7 @@ async function createCheckout({ request, env }) {
         item_count: String(itemCount),
         total_usd: `$${totalUsd.toFixed(2)}`,
         delivery_date: delivery.delivery_date || '',
+        card_note: delivery.card_note || '',
       },
     }),
   })
