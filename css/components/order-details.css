@@ -777,6 +777,26 @@ input[type="date"].form-control {
 
 .checkout-promo-controls button:hover { background: var(--primary-hover); }
 
+.checkout-promo-remove-btn {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px;
+  padding: 8px 12px !important;
+  background: #f8fafc !important;
+  color: #dc2626 !important;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition: all var(--transition-fast, 0.15s);
+  white-space: nowrap;
+}
+
+.checkout-promo-remove-btn:hover {
+  background: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+  color: #b91c1c !important;
+}
+
 .checkout-promo-status {
   min-height: 1.2em;
   margin: 7px 0 0;

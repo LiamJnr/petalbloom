@@ -5,7 +5,12 @@ const BLOOM10_MAXIMUM_DISCOUNT_CENTS = 1_800
 
 export function getPromotionCode() {
   try {
-    return normalizePromotionCode(localStorage.getItem(PROMOTION_STORAGE_KEY))
+    const code = normalizePromotionCode(localStorage.getItem(PROMOTION_STORAGE_KEY))
+    if (code === 'BLOOM10' && Date.now() > Date.parse(BLOOM10_EXPIRES_AT)) {
+      localStorage.removeItem(PROMOTION_STORAGE_KEY)
+      return ''
+    }
+    return code
   } catch {
     return ''
   }
@@ -29,7 +34,8 @@ export function getPromotionPreview(subtotalUsd) {
     return { code, state: 'invalid', discountUsd: 0, message: 'That promo code is not valid.' }
   }
   if (Date.now() > Date.parse(BLOOM10_EXPIRES_AT)) {
-    return { code, state: 'invalid', discountUsd: 0, message: 'BLOOM10 has expired.' }
+    setPromotionCode('')
+    return { code: '', state: 'invalid', discountUsd: 0, message: 'BLOOM10 has expired and was removed.' }
   }
 
   const subtotalCents = Math.round(Number(subtotalUsd) * 100)

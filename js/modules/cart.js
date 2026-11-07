@@ -308,8 +308,9 @@ function renderCartDrawerMarkup() {
         <form class="promo-code-form" id="cart-promo-form" novalidate>
           <label for="cart-promo-code">Promo code</label>
           <div class="promo-code-controls">
-            <input id="cart-promo-code" type="text" autocomplete="off" autocapitalize="characters" maxlength="32" placeholder="BLOOM10" aria-describedby="cart-promo-status" />
-            <button type="submit" class="promo-apply-btn">Apply</button>
+            <input id="cart-promo-code" type="text" autocomplete="off" autocapitalize="characters" maxlength="32" placeholder="Enter Promo Code" aria-describedby="cart-promo-status" />
+            <button type="submit" class="promo-apply-btn" id="btn-cart-promo-apply">Apply</button>
+            <button type="button" class="promo-remove-btn" id="btn-cart-promo-remove" style="display: none;" aria-label="Remove promo code">&times; Remove</button>
           </div>
           <p class="promo-code-status" id="cart-promo-status" role="status"></p>
         </form>
@@ -381,6 +382,15 @@ function bindCartEvents() {
   promoForm?.addEventListener("submit", (e) => {
     e.preventDefault();
     setPromotionCode(document.getElementById("cart-promo-code")?.value);
+    updateCartUI();
+  });
+
+  const cartPromoRemoveBtn = document.getElementById("btn-cart-promo-remove");
+  cartPromoRemoveBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    setPromotionCode("");
+    const promoInput = document.getElementById("cart-promo-code");
+    if (promoInput) promoInput.value = "";
     updateCartUI();
   });
 
@@ -611,6 +621,10 @@ export function updateCartUI() {
 
   const promoInput = document.getElementById("cart-promo-code");
   if (promoInput && document.activeElement !== promoInput) promoInput.value = getPromotionCode();
+  const promoRemoveBtn = document.getElementById("btn-cart-promo-remove");
+  if (promoRemoveBtn) {
+    promoRemoveBtn.style.display = (promotion.state === "applied" || Boolean(getPromotionCode())) ? "inline-flex" : "none";
+  }
   const promoStatus = document.getElementById("cart-promo-status");
   if (promoStatus) {
     promoStatus.textContent = promotion.message || "Enter a code to see your eligible discount.";

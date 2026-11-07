@@ -75,7 +75,12 @@ async function createCheckout({ request, env }) {
   try {
     promotion = calculatePromotion(body.promo_code, subtotalUsdCents)
   } catch (error) {
-    return json({ error: error.message }, 400)
+    if (error?.message === 'That promo code has expired.') {
+      // Auto-clear expired promo code gracefully so payment is never blocked
+      promotion = null
+    } else {
+      return json({ error: error.message }, 400)
+    }
   }
   if (kingsbiteDeliveryOffer.isEligible && promotion) {
     return json({ error: 'The Kingsbite free-delivery offer cannot be combined with a promo code.' }, 400)

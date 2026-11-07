@@ -669,8 +669,9 @@ function buildSidebarHtml({ cart, subtotal, isFreeDelivery, kingsbiteOffer, deli
     <form class="checkout-promo-form" id="checkout-promo-form" novalidate>
       <label for="checkout-promo-code">Promo code</label>
       <div class="checkout-promo-controls">
-        <input id="checkout-promo-code" type="text" autocomplete="off" autocapitalize="characters" maxlength="32" value="${getPromotionCode()}" placeholder="BLOOM10" aria-describedby="checkout-promo-status" />
-        <button type="submit">Apply</button>
+        <input id="checkout-promo-code" type="text" autocomplete="off" autocapitalize="characters" maxlength="32" value="${getPromotionCode()}" placeholder="Enter Promo Code" aria-describedby="checkout-promo-status" />
+        <button type="submit" id="btn-checkout-promo-apply">Apply</button>
+        <button type="button" class="checkout-promo-remove-btn" id="btn-checkout-promo-remove" style="${(promotion.state === 'applied' || Boolean(getPromotionCode())) ? '' : 'display: none;'}" aria-label="Remove promo code">&times; Remove</button>
       </div>
       <p class="checkout-promo-status ${promotion.state}" id="checkout-promo-status" role="status">${promotion.message || 'Enter a code to see your eligible discount.'}</p>
     </form>
@@ -723,6 +724,10 @@ function updateCheckoutPromotionSummary() {
   const estimates = document.getElementById("checkout-intl-prices");
 
   if (input) input.value = getPromotionCode();
+  const promoRemoveBtn = document.getElementById("btn-checkout-promo-remove");
+  if (promoRemoveBtn) {
+    promoRemoveBtn.style.display = (promotion.state === "applied" || Boolean(getPromotionCode())) ? "inline-flex" : "none";
+  }
   if (status) {
     status.textContent = promotion.message || "Enter a code to see your eligible discount.";
     status.className = `checkout-promo-status ${promotion.state}`;
@@ -777,6 +782,15 @@ function bindCheckoutEvents() {
   promoForm?.addEventListener("submit", (e) => {
     e.preventDefault();
     setPromotionCode(document.getElementById("checkout-promo-code")?.value);
+    updateCheckoutPromotionSummary();
+  });
+
+  const checkoutPromoRemoveBtn = document.getElementById("btn-checkout-promo-remove");
+  checkoutPromoRemoveBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    setPromotionCode("");
+    const promoInput = document.getElementById("checkout-promo-code");
+    if (promoInput) promoInput.value = "";
     updateCheckoutPromotionSummary();
   });
 
