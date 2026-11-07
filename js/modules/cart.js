@@ -9,6 +9,7 @@ import { getInternationalEstimates } from "../lib/currency.js";
 import { getPromotionCode, getPromotionPreview, setPromotionCode } from "../lib/promotion.js";
 import { navigateToCheckout } from "./router.js";
 import { getKingsbiteFreeDeliveryOffer, hasFreeDelivery, STANDARD_FREE_DELIVERY_THRESHOLD_USD } from "../lib/kingsbite-delivery.js";
+import { calculateProcessingFee } from "../lib/processing-fee.js";
 
 const CART_STORAGE_KEY = "petal_bloom_cart";
 const FREE_SHIPPING_THRESHOLD = STANDARD_FREE_DELIVERY_THRESHOLD_USD;
@@ -313,12 +314,14 @@ function renderCartDrawerMarkup() {
           <p class="promo-code-status" id="cart-promo-status" role="status"></p>
         </form>
         <div class="cart-price-breakdown" aria-label="Order price breakdown">
-          <span>Merchandise</span><span id="cart-subtotal-val">$0.00</span>
+          <span>Subtotal</span><span id="cart-subtotal-val">$0.00</span>
+          <span>Delivery</span><span id="cart-delivery-val">$0.00</span>
           <span class="cart-discount-label" id="cart-discount-label" hidden>Discount <b id="cart-promo-label"></b></span><span class="cart-discount-value" id="cart-discount-val" hidden></span>
+          <span>Processing Fee (4.9% + $0.40)</span><strong id="cart-processing-fee-val">$0.00</strong>
         </div>
         <div class="cart-total-row">
           <div class="cart-total-label-wrap">
-            <span>Estimated Total:</span>
+            <span>Total Due:</span>
             <small class="cart-delivery-note" id="cart-delivery-note">Complimentary delivery on orders $100+</small>
           </div>
           <strong id="cart-total-val">$0.00</strong>
@@ -447,6 +450,8 @@ export function updateCartUI() {
   const badge = document.getElementById("cart-badge");
   const drawerBadge = document.getElementById("cart-drawer-badge");
   const subtotalEl = document.getElementById("cart-subtotal-val");
+  const deliveryEl = document.getElementById("cart-delivery-val");
+  const processingFeeEl = document.getElementById("cart-processing-fee-val");
   const totalEl = document.getElementById("cart-total-val");
   const shippingText = document.getElementById("shipping-meter-text");
   const shippingFill = document.getElementById("shipping-meter-fill");
@@ -585,7 +590,8 @@ export function updateCartUI() {
   const isFreeDelivery = hasFreeDelivery(cartItems, subtotal) || subtotal === 0;
   const deliveryFee = (subtotal === 0 || isFreeDelivery) ? 0 : 14;
   const discount = promotion.state === "applied" ? promotion.discountUsd : 0;
-  const total = subtotal + deliveryFee - discount;
+  const baseTotalCents = Math.round((subtotal + deliveryFee - discount) * 100);
+  const { feeUsd: processingFee, finalTotalUsd: total } = calculateProcessingFee(baseTotalCents);
 
   const deliveryNoteEl = document.getElementById("cart-delivery-note");
   if (deliveryNoteEl) {
@@ -599,6 +605,8 @@ export function updateCartUI() {
   }
 
   if (subtotalEl) subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
+  if (deliveryEl) deliveryEl.textContent = deliveryFee === 0 ? "FREE" : `$${deliveryFee.toFixed(2)}`;
+  if (processingFeeEl) processingFeeEl.textContent = `$${processingFee.toFixed(2)}`;
   if (totalEl) totalEl.textContent = `$${total.toFixed(2)}`;
 
   const promoInput = document.getElementById("cart-promo-code");

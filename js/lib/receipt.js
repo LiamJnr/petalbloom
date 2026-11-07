@@ -123,7 +123,8 @@ export function buildReceiptHtml(order) {
       ? delivery.delivery_fee_usd
       : (reconstructedSubtotalUsd >= 100 ? 0 : 14)) * 100
   const discountCents = hasPricingAudit ? Number(order.discount_usd_cents || 0) : 0
-  const totalUsdCents = subtotalCents + deliveryFeeCents - discountCents
+  const processingFeeCents = Number(delivery.processing_fee_usd_cents || 0)
+  const totalUsdCents = subtotalCents + deliveryFeeCents - discountCents + processingFeeCents
 
   const paymentSettled = usd(Number(order.total_cents || 0))
 
@@ -318,6 +319,7 @@ export function buildReceiptHtml(order) {
           <div class="row"><span>Subtotal</span><span>${usd(subtotalCents)}</span></div>
           <div class="row"><span>Delivery &amp; Handling</span>${deliveryFeeCents === 0 ? '<span class="free-tag">Free</span>' : `<span>${usd(deliveryFeeCents)}</span>`}</div>
           ${discountCents > 0 ? `<div class="row"><span>Discount${order.promo_code ? ` (${esc(order.promo_code)})` : ''}</span><span>−${usd(discountCents)}</span></div>` : ''}
+          ${processingFeeCents > 0 ? `<div class="row"><span>Processing Fee</span><span>${usd(processingFeeCents)}</span></div>` : ''}
           <div class="row total"><span>Total Paid</span><span class="amount">${usd(totalUsdCents)}</span></div>
           <div class="settled">Settled via HandyPay: ${paymentSettled} USD</div>
         </div>

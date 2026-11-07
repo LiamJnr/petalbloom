@@ -14,6 +14,7 @@ import { getDeliveryCountdownState } from "../lib/delivery-timer.js";
 import { getPromotionCode, getPromotionPreview, setPromotionCode } from "../lib/promotion.js";
 import { getKingsbiteFreeDeliveryOffer, hasFreeDelivery, STANDARD_FREE_DELIVERY_THRESHOLD_USD } from "../lib/kingsbite-delivery.js";
 import { escapeHtml } from "../lib/html-escape.js";
+import { calculateProcessingFee } from "../lib/processing-fee.js";
 
 let selectedTimeWindow = "morning";
 let selectedLocationType = "residential";
@@ -600,7 +601,10 @@ export function renderCheckoutPage() {
     ? { code: getPromotionCode(), state: "unavailable", discountUsd: 0, message: "Kingsbite free delivery is applied; promo codes are not combined with this offer." }
     : getPromotionPreview(subtotal);
   const discount = promotion.state === "applied" ? promotion.discountUsd : 0;
-  const totalDue = subtotal + deliveryFee - discount;
+  const baseTotal = subtotal + deliveryFee - discount;
+  const feeInfo = calculateProcessingFee(Math.round(baseTotal * 100));
+  const processingFee = feeInfo.feeUsd;
+  const totalDue = feeInfo.finalTotalUsd;
   const usdFormatted = `$${totalDue.toFixed(2)}`;
 
   // Free shipping progress meter calculations
@@ -608,7 +612,7 @@ export function renderCheckoutPage() {
   const shippingRemaining = shippingThreshold - subtotal;
   const shippingProgressPct = Math.min(100, Math.round((subtotal / shippingThreshold) * 100));
 
-  const summaryData = { cart, subtotal, isFreeDelivery, kingsbiteOffer, deliveryFee, discount, promotion, totalDue, shippingRemaining, shippingProgressPct };
+  const summaryData = { cart, subtotal, isFreeDelivery, kingsbiteOffer, deliveryFee, discount, promotion, processingFee, totalDue, shippingRemaining, shippingProgressPct };
 
   checkoutView.innerHTML =
     `<header class="pdp-page-header"><div class="container"><h1>Order Details</h1><nav class="pdp-breadcrumb" aria-label="Breadcrumb"><a href="#" class="btn-checkout-home">Home</a><span>/</span><a href="#" class="btn-checkout-cart">Shopping Bag</a><span>/</span><span class="pdp-breadcrumb-current">Recipient &amp; Delivery</span></nav></div></header>` +
@@ -638,7 +642,7 @@ export function renderCheckoutPage() {
 }
 
 // ─── Sidebar Order Summary (called from buildSidebarHtml template) ─────────────
-function buildSidebarHtml({ cart, subtotal, isFreeDelivery, kingsbiteOffer, deliveryFee, discount, promotion, totalDue, shippingRemaining, shippingProgressPct }) {
+function buildSidebarHtml({ cart, subtotal, isFreeDelivery, kingsbiteOffer, deliveryFee, discount, promotion, processingFee, totalDue, shippingRemaining, shippingProgressPct }) {
   return `
     <div class="checkout-summary-header">
       <h3>Order Summary</h3>
@@ -672,8 +676,9 @@ function buildSidebarHtml({ cart, subtotal, isFreeDelivery, kingsbiteOffer, deli
     </form>
     <div class="checkout-calc-rows">
       <div class="checkout-breakdown-row" style="display:flex;justify-content:space-between;font-size:0.88rem;color:var(--muted);margin-bottom:6px;"><span>Subtotal:</span><span>$${subtotal.toFixed(2)}</span></div>
-      <div class="checkout-breakdown-row" style="display:flex;justify-content:space-between;font-size:0.88rem;color:var(--muted);margin-bottom:10px;"><span>Delivery:</span><span>${isFreeDelivery ? `<strong style="color:#059669;">FREE${kingsbiteOffer.isEligible ? ' &middot; Kingsbite' : ''}</strong>` : '<strong>$14.00</strong>'}</span></div>
+      <div class="checkout-breakdown-row" style="display:flex;justify-content:space-between;font-size:0.88rem;color:var(--muted);margin-bottom:6px;"><span>Delivery:</span><span>${isFreeDelivery ? `<strong style="color:#059669;">FREE${kingsbiteOffer.isEligible ? ' &middot; Kingsbite' : ''}</strong>` : '<strong>$14.00</strong>'}</span></div>
       <div class="checkout-breakdown-row checkout-discount-row" id="checkout-discount-row" ${discount > 0 ? '' : 'hidden'}><span>Discount <strong id="checkout-promo-label">${discount > 0 ? '(' + promotion.code + ')' : ''}</strong></span><strong id="checkout-discount-value">${discount > 0 ? '&minus;$' + discount.toFixed(2) : ''}</strong></div>
+      <div class="checkout-breakdown-row checkout-fee-row" id="checkout-fee-row" style="display:flex;justify-content:space-between;font-size:0.88rem;color:var(--muted);margin-bottom:10px;"><span>Processing Fee (4.9% + $0.40):</span><strong id="checkout-processing-fee">$${processingFee.toFixed(2)}</strong></div>
       <div class="checkout-total-row">
         <div class="checkout-total-label-wrap">
           <span>Total Due:</span>
@@ -703,12 +708,17 @@ function updateCheckoutPromotionSummary() {
     : getPromotionPreview(subtotal);
   const discount = promotion.state === "applied" ? promotion.discountUsd : 0;
   const deliveryFee = hasFreeDelivery(cart, subtotal) ? 0 : 14;
-  const total = subtotal + deliveryFee - discount;
+  const baseTotal = subtotal + deliveryFee - discount;
+  const feeInfo = calculateProcessingFee(Math.round(baseTotal * 100));
+  const processingFee = feeInfo.feeUsd;
+  const total = feeInfo.finalTotalUsd;
+
   const input = document.getElementById("checkout-promo-code");
   const status = document.getElementById("checkout-promo-status");
   const discountRow = document.getElementById("checkout-discount-row");
   const discountLabel = document.getElementById("checkout-promo-label");
   const discountValue = document.getElementById("checkout-discount-value");
+  const feeValue = document.getElementById("checkout-processing-fee");
   const totalDue = document.getElementById("checkout-total-due");
   const estimates = document.getElementById("checkout-intl-prices");
 
@@ -720,6 +730,7 @@ function updateCheckoutPromotionSummary() {
   if (discountRow) discountRow.hidden = discount <= 0;
   if (discountLabel) discountLabel.textContent = discount > 0 ? `(${promotion.code})` : "";
   if (discountValue) discountValue.textContent = discount > 0 ? `−$${discount.toFixed(2)}` : "";
+  if (feeValue) feeValue.textContent = `$${processingFee.toFixed(2)}`;
   if (totalDue) totalDue.textContent = `$${total.toFixed(2)}`;
   if (estimates) {
     estimates.innerHTML = `

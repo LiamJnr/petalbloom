@@ -4,6 +4,7 @@ import { createReceiptToken, hashReceiptToken } from '../lib/receipt-access.js'
 import { calculatePromotion } from '../lib/promotions.js'
 import { expandCuratedCombo, getCheckoutProduct } from '../lib/combo-order.js'
 import { getKingsbiteFreeDeliveryOffer, hasFreeDelivery } from '../../js/lib/kingsbite-delivery.js'
+import { calculateProcessingFee } from '../../js/lib/processing-fee.js'
 
 const MAX_LINE_ITEMS = 25
 const MAX_QUANTITY_PER_LINE = 20
@@ -89,10 +90,10 @@ async function createCheckout({ request, env }) {
   }
 
   const discountUsdCents = promotion?.discountUsdCents || 0
-  const totalUsdCents = subtotalUsdCents + deliveryFeeUsdCents - discountUsdCents
+  const baseOrderUsdCents = subtotalUsdCents + deliveryFeeUsdCents - discountUsdCents
+  const { finalTotalCents: totalUsdCents, feeCents: processingFeeUsdCents, feeUsd: processingFeeUsd, finalTotalUsd: totalUsd } = calculateProcessingFee(baseOrderUsdCents)
   const deliveryFeeUsd = deliveryFeeUsdCents / 100
   const discountUsd = discountUsdCents / 100
-  const totalUsd = totalUsdCents / 100
   const orderId = crypto.randomUUID()
   const receiptToken = createReceiptToken()
   const receiptAccessHash = await hashReceiptToken(receiptToken)
@@ -103,6 +104,8 @@ async function createCheckout({ request, env }) {
     delivery_fee_usd: deliveryFeeUsd,
     delivery_fee_usd_cents: deliveryFeeUsdCents,
     discount_usd_cents: discountUsdCents,
+    processing_fee_usd: processingFeeUsd,
+    processing_fee_usd_cents: processingFeeUsdCents,
     promo_code: promotion?.code || null,
     delivery_offer: kingsbiteDeliveryOffer.isEligible ? 'KINGSBITE_FREE_DELIVERY' : null,
   }
