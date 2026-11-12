@@ -145,7 +145,7 @@ async function createCheckout({ request, env }) {
     body: JSON.stringify({
       amount: totalUsdCents,
       currency: currency.toLowerCase(),
-      description: checkoutDescription(items),
+      description: checkoutDescription(items, delivery),
       customer_email: buyer.email,
       pass_fees_to_customer: false,
       // Our Live account uses HandyPay's eligible platform/destination-payment
@@ -157,6 +157,7 @@ async function createCheckout({ request, env }) {
         item_count: String(itemCount),
         total_usd: `$${totalUsd.toFixed(2)}`,
         delivery_date: delivery.delivery_date || '',
+        delivery_time: formatDeliveryTimeWindow(delivery.time_window) || '',
         card_note: delivery.card_note || '',
       },
     }),
@@ -276,11 +277,24 @@ function validateBuyer(value) {
   return buyer
 }
 
-function checkoutDescription(items) {
+function formatDeliveryTimeWindow(window) {
+  const map = {
+    morning: 'Morning (9 AM–1 PM)',
+    afternoon: 'Afternoon (1–5 PM)',
+    evening: 'Evening (5–8 PM)',
+  }
+  return map[window] || window || ''
+}
+
+function checkoutDescription(items, delivery = {}) {
   const itemText = items
     .map((item) => `${item.name} — ${item.size.name}, ${item.vase.name} × ${item.quantity}`)
     .join('; ')
-  return `Order: ${itemText}`.slice(0, 1000)
+  const timeLabel = formatDeliveryTimeWindow(delivery.time_window)
+  const deliveryTiming = [delivery.delivery_date, timeLabel].filter(Boolean).join(' ')
+  const deliveryText = deliveryTiming ? ` | Delivery: ${deliveryTiming}` : ''
+  const noteText = delivery.card_note ? ` | Card Note: "${delivery.card_note}"` : ''
+  return `Order: ${itemText}${deliveryText}${noteText}`.slice(0, 1000)
 }
 
 async function parseCheckoutBody(request) {
